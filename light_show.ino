@@ -93,7 +93,7 @@ void loop() {
     int barHeight = bandValues[band] / AMPLITUDE;
 
     // Small amount of averaging between frames
-    barHeight = ((oldBarHeights[band] * 1) + barHeight) / 2;
+    // barHeight = ((oldBarHeights[band] * 1) + barHeight) / 2;
 
     // Move peak up
     if (barHeight > peak[band]) {
