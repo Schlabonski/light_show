@@ -3,7 +3,7 @@
 #include <arduinoFFT.h>
 #include <FastLED.h>
 
-#define SAMPLES         1024          // Must be a power of 2
+#define SAMPLES         512          // Must be a power of 2
 #define SAMPLING_FREQ   40000         // Hz, must be 40000 or less due to ADC conversion time. Determines maximum frequency that can be analysed by the FFT Fmax=sampleF/2.
 #define AMPLITUDE       500          // Depending on your audio source level, you may need to alter this value. Can be used as a 'sensitivity' control.
 #define AUDIO_IN_PIN    34            // Signal in on this pin
@@ -77,7 +77,7 @@ void loop() {
     if (vReal[i] > NOISE) {                    // Add a crude noise filter
 
     //8 bands, 12kHz top band
-      if (i > 0 && i<=6 )           bandValues[0]  += (int)vReal[i]; // volume band
+      if (i > 0 && i<=3 )           bandValues[0]  += (int)vReal[i]; // volume band
       if (i>3   && i<=6  ) bandValues[1]  += (int)vReal[i]; // messed with the value to combine lower, old was 3
       if (i>6   && i<=13 ) bandValues[2]  += (int)vReal[i];
       if (i>13  && i<=27 ) bandValues[3]  += (int)vReal[i];
@@ -118,8 +118,10 @@ void loop() {
     // Move peak up
     if (barHeight > peak[band]) {
       peak[band] = barHeight;
-      if (band == 0){
+      if (band == 3){
           beat_detected_low = true;
+          counter_low++;
+          counter_low = counter_low % 4;
       }
       else if (band >= 7) {
           //beat_detected_low = true;
@@ -134,8 +136,13 @@ void loop() {
   // Decay peak
   EVERY_N_MILLISECONDS(10) {
     brightness_stripe_0 /= 2;
-    if (brightnness_floodlight > 0) {
-      brightnness_floodlight = 0;
+    if (brightnness_floodlight > 100) {
+        if (counter_low != 0){
+          brightnness_floodlight = brightnness_floodlight-6;
+        }
+    }
+    else {
+        brightnness_floodlight = 0;
     }
     ledcWrite(ledChannel_0, brightness_stripe_0);
     dacWrite(FLOODLIGHT_OUT, brightnness_floodlight);
@@ -147,10 +154,14 @@ void loop() {
   // flash the lights
   EVERY_N_MILLISECONDS(1) {
       if (beat_detected_low){
-          brightnness_floodlight = 150;
+          if (counter_low==0){
+              brightnness_floodlight = 122;
+          }
+          else if (counter_low==1){
+              brightnness_floodlight = 160;
+          }
           dacWrite(FLOODLIGHT_OUT, brightnness_floodlight);
           beat_detected_low = false;
-          counter_low++;
       }
       if (beat_detected_high){
           brightness_stripe_0 = 255;
